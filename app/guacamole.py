@@ -11,6 +11,7 @@ DATA_SOURCE = os.getenv("GUACAMOLE_DATA_SOURCE", "")
 GUACAMOLE_USERNAME = os.getenv("GUACAMOLE_USERNAME", "")
 GUACAMOLE_PASSWORD = os.getenv("GUACAMOLE_PASSWORD", "")
 GUACAMOLE_SSH_USERNAME = os.getenv("GUACAMOLE_SSH_USERNAME", "")
+GUACAMOLE_SSH_PASSWORD = os.getenv("GUACAMOLE_SSH_PASSWORD", "")
 GUACAMOLE_SSH_PORT = os.getenv("GUACAMOLE_SSH_PORT", "22")
 GUACAMOLE_NEW_USER_PASSWORD = os.getenv("GUACAMOLE_NEW_USER_PASSWORD", "")
 GUACAMOLE_HTTP_TIMEOUT = float(os.getenv("GUACAMOLE_HTTP_TIMEOUT", "10"))
@@ -65,9 +66,20 @@ async def create_user(username: str, password: str | None = None) -> None:
         response.raise_for_status()
 
 
-async def create_connection(hostname: str, name: str) -> int:
-    if not GUACAMOLE_SSH_USERNAME:
+async def create_connection(
+    hostname: str,
+    name: str,
+    username: str | None = None,
+    password: str | None = None,
+) -> int:
+    connection_username = username or GUACAMOLE_SSH_USERNAME
+    connection_password = password or GUACAMOLE_SSH_PASSWORD
+
+    if not hostname:
+        raise RuntimeError("hostname is not set")
+    if not connection_username:
         raise RuntimeError("GUACAMOLE_SSH_USERNAME is not set")
+
     async with httpx.AsyncClient(
         timeout=GUACAMOLE_HTTP_TIMEOUT,
         follow_redirects=True,
@@ -82,7 +94,8 @@ async def create_connection(hostname: str, name: str) -> int:
                 "parameters": {
                     "hostname": hostname,
                     "port": GUACAMOLE_SSH_PORT,
-                    "username": GUACAMOLE_SSH_USERNAME,
+                    "username": connection_username,
+                    **({"password": connection_password} if connection_password else {}),
                 },
             },
         )

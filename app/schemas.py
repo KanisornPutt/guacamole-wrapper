@@ -23,7 +23,8 @@ class WorkspaceCreate(BaseModel):
     external_instance_id: str
     external_user_id: str
     workspace_name: str
-    fixed_ip: str
+    os_username: Optional[str] = None
+    os_password: Optional[str] = None
 
 
 class WorkspaceResponse(BaseModel):

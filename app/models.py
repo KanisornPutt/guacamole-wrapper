@@ -22,7 +22,8 @@ class Workspace(Base):
     guacamole_connection_id = mapped_column(Integer, unique=True)
 
     workspace_name = mapped_column(String(255))
-    fixed_ip = mapped_column(String(45))
+    os_username = mapped_column(String(255), nullable=True)
+    os_password = mapped_column(String(255), nullable=True)
     floating_ip = mapped_column(String(45), nullable=True)
 
     is_active = mapped_column(Boolean, default=True)

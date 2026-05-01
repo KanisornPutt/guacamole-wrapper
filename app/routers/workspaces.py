@@ -30,21 +30,12 @@ async def create_workspace(payload: WorkspaceCreate, db: AsyncSession = Depends(
     if existing.scalar_one_or_none():
         return {"status": "exists"}
 
-    # Create Guacamole connection
-    connection_id = await guacamole.create_connection(
-        payload.fixed_ip,
-        payload.workspace_name
-    )
-
-    # Grant permission
-    await guacamole.grant_user_permission(user.username, connection_id)
-
     workspace = Workspace(
         external_instance_id=payload.external_instance_id,
         user_id=user.external_user_id,
         workspace_name=payload.workspace_name,
-        fixed_ip=payload.fixed_ip,
-        guacamole_connection_id=connection_id
+        os_username=payload.os_username,
+        os_password=payload.os_password,
     )
 
     db.add(workspace)
@@ -63,11 +54,29 @@ async def assign_network(external_instance_id: str, payload: NetworkAssign, db: 
     if not workspace:
         raise HTTPException(404)
 
-    # Update Guacamole
-    await guacamole.update_connection(
-        workspace.guacamole_connection_id,
-        payload.floating_ip
-    )
+    if workspace.guacamole_connection_id is None:
+        user_result = await db.execute(
+            select(User).where(User.external_user_id == workspace.user_id)
+        )
+        user = user_result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(404, "User not found")
+
+        connection_id = await guacamole.create_connection(
+            payload.floating_ip,
+            workspace.workspace_name,
+            workspace.os_username,
+            workspace.os_password,
+        )
+        await guacamole.grant_user_permission(user.username, connection_id)
+        workspace.guacamole_connection_id = connection_id
+    else:
+        # Update Guacamole
+        await guacamole.update_connection(
+            workspace.guacamole_connection_id,
+            payload.floating_ip
+        )
 
     workspace.floating_ip = payload.floating_ip
     await db.commit()
@@ -84,7 +93,8 @@ async def delete_workspace(external_instance_id: str, db: AsyncSession = Depends
     if not workspace:
         raise HTTPException(404)
 
-    await guacamole.delete_connection(workspace.guacamole_connection_id)
+    if workspace.guacamole_connection_id is not None:
+        await guacamole.delete_connection(workspace.guacamole_connection_id)
 
     await db.delete(workspace)
     await db.commit()
