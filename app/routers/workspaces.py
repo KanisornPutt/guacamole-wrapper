@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import guacamole
 from app.database import get_db
 from app.models import User, Workspace
-from app.schemas import NetworkAssign, WorkspaceCreate
+from app.schemas import NetworkAssign, NetworkDisassociate, WorkspaceCreate
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +202,26 @@ async def assign_network(external_instance_id: str, payload: NetworkAssign, db: 
     await db.commit()
 
     return {"status": "updated", **response_data}
+
+@router.delete("/network/disassociate")
+async def disassociate_network(payload: NetworkDisassociate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Workspace).where(Workspace.floating_ip == payload.floating_ip)
+    )
+    workspace = result.scalar_one_or_none()
+
+    if not workspace:
+        raise HTTPException(404)
+
+    if workspace.guacamole_connection_id is not None:
+        await guacamole.delete_connection(workspace.guacamole_connection_id)
+        workspace.guacamole_connection_id = None
+
+    workspace.floating_ip = None
+    await db.commit()
+
+    return {"status": "disassociated"}
+
 
 @router.delete("/{external_instance_id}")
 async def delete_workspace(external_instance_id: str, db: AsyncSession = Depends(get_db)):

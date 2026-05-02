@@ -18,3 +18,7 @@ class WorkspaceCreate(BaseModel):
 
 class NetworkAssign(BaseModel):
     floating_ip: str
+
+
+class NetworkDisassociate(BaseModel):
+    floating_ip: str
