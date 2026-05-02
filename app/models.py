@@ -1,5 +1,5 @@
 from sqlalchemy import String, Boolean, ForeignKey, TIMESTAMP, func, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import mapped_column
 
 from app.database import Base
 

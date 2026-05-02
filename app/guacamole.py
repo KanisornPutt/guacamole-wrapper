@@ -56,10 +56,6 @@ def _users_url() -> str:
     return f"{BASE_URL}/session/data/{DATA_SOURCE}/users"
 
 
-def _user_groups_url() -> str:
-    return f"{BASE_URL}/session/data/{DATA_SOURCE}/userGroups"
-
-
 async def _find_connection_group_id_by_name(target_name: str) -> int | None:
     """Find a connection group by name in the /connectionGroups endpoint."""
     async with httpx.AsyncClient(
@@ -139,15 +135,45 @@ async def create_user(username: str, password: str | None = None) -> None:
     user_password = password or GUACAMOLE_NEW_USER_PASSWORD
     if not user_password:
         raise RuntimeError("GUACAMOLE_NEW_USER_PASSWORD is not set")
+    
     async with httpx.AsyncClient(
         timeout=GUACAMOLE_HTTP_TIMEOUT,
         follow_redirects=True,
         trust_env=False,
     ) as client:
+        # 1. Create the user
         response = await client.post(
             _users_url(),
             headers=await _auth_headers(),
             json={"username": username, "password": user_password, "attributes": {}},
+        )
+        response.raise_for_status()
+
+        # 2. Grant permission for the user to update their own account (change password)
+        response = await client.patch(
+            f"{_users_url()}/{username}/permissions",
+            headers=await _auth_headers(),
+            json=[
+                {
+                    "op": "add",
+                    "path": f"/userPermissions/{username}",
+                    "value": "UPDATE",  # allows changing own password
+                }
+            ],
+        )
+        response.raise_for_status()
+
+        # 3. Grant system-level permission to update connections they have access to
+        response = await client.patch(
+            f"{_users_url()}/{username}/permissions",
+            headers=await _auth_headers(),
+            json=[
+                {
+                    "op": "add",
+                    "path": "/systemPermissions",
+                    "value": "CREATE_CONNECTION",  # allows editing connection parameters
+                }
+            ],
         )
         response.raise_for_status()
 
@@ -234,7 +260,7 @@ async def grant_user_permission(username: str, connection_id: int) -> dict:
         trust_env=False,
     ) as client:
         logger.info(
-            f"Granting READ permission for user={username}, connection={connection_id}"
+            f"Granting READ and UPDATE permissions for user={username}, connection={connection_id}"
         )
         response = await client.patch(
             f"{_users_url()}/{username}/permissions",
@@ -244,12 +270,17 @@ async def grant_user_permission(username: str, connection_id: int) -> dict:
                     "op": "add",
                     "path": f"/connectionPermissions/{connection_id}",
                     "value": "READ",
+                },
+                {
+                    "op": "add",
+                    "path": f"/connectionPermissions/{connection_id}",
+                    "value": "UPDATE",
                 }
             ],
         )
         response.raise_for_status()
         logger.info(
-            f"Permission granted for user={username}, connection={connection_id}"
+            f"Permissions granted for user={username}, connection={connection_id}"
         )
         return {
             "status": "success",
@@ -258,14 +289,14 @@ async def grant_user_permission(username: str, connection_id: int) -> dict:
 
 
 async def grant_user_connection_group_permission(username: str, group_id: int) -> dict:
-    """Grant a user READ permission on a connection group."""
+    """Grant a user READ and UPDATE permission on a connection group."""
     async with httpx.AsyncClient(
         timeout=GUACAMOLE_HTTP_TIMEOUT,
         follow_redirects=True,
         trust_env=False,
     ) as client:
         logger.info(
-            f"Granting READ permission for user={username}, connection_group={group_id}"
+            f"Granting READ and UPDATE permissions for user={username}, connection_group={group_id}"
         )
         response = await client.patch(
             f"{_users_url()}/{username}/permissions",
@@ -275,12 +306,17 @@ async def grant_user_connection_group_permission(username: str, group_id: int) -
                     "op": "add",
                     "path": f"/connectionGroupPermissions/{group_id}",
                     "value": "READ",
+                },
+                {
+                    "op": "add",
+                    "path": f"/connectionGroupPermissions/{group_id}",
+                    "value": "UPDATE",
                 }
             ],
         )
         response.raise_for_status()
         logger.info(
-            f"Connection group permission granted for user={username}, group={group_id}"
+            f"Connection group permissions granted for user={username}, group={group_id}"
         )
         return {
             "status": "success",

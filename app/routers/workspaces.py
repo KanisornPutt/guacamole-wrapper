@@ -22,8 +22,38 @@ async def create_workspace(payload: WorkspaceCreate, db: AsyncSession = Depends(
     )
     user = result.scalar_one_or_none()
 
+    # If user doesn't exist, create them only if a username was provided.
     if not user:
-        raise HTTPException(404, "User not found")
+        if not payload.username:
+            raise HTTPException(404, "User not found")
+
+        username_result = await db.execute(
+            select(User).where(User.username == payload.username)
+        )
+        username_conflict = username_result.scalar_one_or_none()
+        if username_conflict:
+            raise HTTPException(status_code=409, detail="Username already exists")
+
+        user = User(external_user_id=payload.external_user_id, username=payload.username)
+        db.add(user)
+        
+        # Create user in Guacamole immediately (ignore already-exists responses)
+        try:
+            await guacamole.create_user(payload.username)
+        except httpx.HTTPStatusError as exc:
+            if exc.response is None:
+                raise
+            status = exc.response.status_code
+            body_text = ""
+            try:
+                body_text = exc.response.text or ""
+            except Exception:
+                body_text = ""
+
+            if status == 409 or (status == 400 and "already exists" in body_text.lower()):
+                logger.info(f"Guacamole user {payload.username} already exists; continuing")
+            else:
+                raise HTTPException(status_code=502, detail=f"Guacamole error: {status}")
 
     # Prevent duplicate instance
     existing = await db.execute(
@@ -36,7 +66,7 @@ async def create_workspace(payload: WorkspaceCreate, db: AsyncSession = Depends(
 
     workspace = Workspace(
         external_instance_id=payload.external_instance_id,
-        user_id=user.external_user_id,
+        user_id=payload.external_user_id,
         workspace_name=payload.workspace_name,
         os_username=payload.os_username,
         os_password=payload.os_password,

@@ -1,31 +1,42 @@
 # Guacamole Wrapper
 
-## Prerequisites
+FastAPI service that stores wrapper state in Postgres and provisions users,
+connections, and permissions through the Apache Guacamole REST API.
+
+## Requirements
 - Python 3.10+
-- Postgres
-- Apache Guacamole API reachable from this service
+- PostgreSQL
+- Reachable Apache Guacamole instance
 
 ## Setup
-1) Create and activate a virtual environment
-2) Install dependencies:
-   - `pip install -r requirements.txt`
+1. Create and activate a virtual environment.
+2. Install dependencies with `pip install -r requirements.txt`.
+3. Copy `.env.example` to `.env` and fill in the values.
 
-3) Create a `.env` file from `.env.example` and fill in values.
+## Database
+- Create the database, for example: `createdb wrapper_db`
+- Run migrations with `alembic upgrade head`
+- Create a new migration after model changes with `alembic revision --autogenerate -m "describe change"`
 
-## Database (Alembic)
-- Create the database (example):
-  - `createdb wrapper_db`
+## Run
+- Start the API with `uvicorn app.main:app --reload`
 
-- Run migrations:
-  - `alembic upgrade head`
+## Docker
+- Build the image with `docker build -t kanisornp/guacamole-wrapper:v.1 .`
+- The compose file uses the app image name `kanisornp/guacamole-wrapper:v.1` and includes Postgres
 
-- Generate new migrations after model changes:
-  - `alembic revision --autogenerate -m "describe change"`
+## API
+- Root: `GET /`
+- Users: `POST /users/`
+- Workspaces: `POST /workspaces/`
+- Workspace network: `PATCH /workspaces/{external_instance_id}/network`
+- Workspace delete: `DELETE /workspaces/{external_instance_id}`
 
-## Run the API
-- `uvicorn app.main:app --reload`
+## OpenAPI
+- Static spec: `openapi.json`
+- Interactive docs are available from FastAPI at `/docs` and `/openapi.json`
 
 ## Notes
-- The API loads configuration from `.env`.
-- Guacamole access uses username/password to retrieve an auth token per request.
-- If the API runs on your host and Guacamole is in Docker, set `GUACAMOLE_BASE_URL` to the published host URL (e.g. `http://localhost:8080/guacamole/api`).
+- Configuration is loaded from `.env`.
+- Guacamole login uses the configured Guacamole username/password to fetch an auth token per request.
+- If the API runs on your host and Guacamole runs in Docker, set `GUACAMOLE_BASE_URL` to the published URL, for example `http://localhost:8080/guacamole/api`.
