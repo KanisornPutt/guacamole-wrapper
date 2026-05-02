@@ -20,6 +20,7 @@ class Workspace(Base):
     user_id = mapped_column(ForeignKey("users.external_user_id", ondelete="CASCADE"))
 
     guacamole_connection_id = mapped_column(Integer, unique=True)
+    guacamole_group_id = mapped_column(Integer, nullable=True)
 
     workspace_name = mapped_column(String(255))
     os_username = mapped_column(String(255), nullable=True)
