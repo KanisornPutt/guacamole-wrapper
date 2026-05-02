@@ -15,7 +15,7 @@ services:
       retries: 10
 
   app:
-    image: kanisornp/guacamole-wrapper:v.1
+    image: kanisornp/guacamole-wrapper:latest
     build:
       context: .
     container_name: guacamole-wrapper-api

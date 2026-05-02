@@ -183,6 +183,17 @@ Behavior:
 - Build the image with `docker build -t kanisornp/guacamole-wrapper:v.1 .`
 - `docker-compose.yml` starts the API with PostgreSQL
 
+## Kubernetes
+
+Kubernetes manifests are in the `k8s/` folder:
+
+- `k8s/guacamole-wrapper-configmap.yaml` for non-secret settings
+- `k8s/guacamole-wrapper-secret.yaml` for credentials and database URL
+- `k8s/guacamole-wrapper-deployment.yaml` for the API deployment
+- `k8s/guacamole-wrapper-service.yaml` for the cluster service
+
+Update the ConfigMap and Secret values to match your cluster endpoints and credentials before applying.
+
 ## Notes
 
 - Configuration is loaded from `.env`.
