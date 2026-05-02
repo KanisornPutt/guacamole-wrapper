@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guacamole-wrapper-config
+  labels:
+    app: guacamole-wrapper
+
+data:
+  APP_TITLE: "Guacamole Wrapper API"
+  SQLALCHEMY_ECHO: "false"
+  GUACAMOLE_BASE_URL: "http://guacamole:8080/guacamole/api"
+  GUACAMOLE_DATA_SOURCE: "postgresql"
+  GUACAMOLE_SSH_USERNAME: "ubuntu"
+  GUACAMOLE_SSH_PORT: "22"
+  GUACAMOLE_HTTP_TIMEOUT: "10"

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guacamole-wrapper
+  labels:
+    app: guacamole-wrapper
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: guacamole-wrapper
+  template:
+    metadata:
+      labels:
+        app: guacamole-wrapper
+    spec:
+      containers:
+        - name: guacamole-wrapper
+          image: kanisornp/guacamole-wrapper:v.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: guacamole-wrapper-config
+            - secretRef:
+                name: guacamole-wrapper-secret
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

@@ -27,6 +27,19 @@
         "title": "NetworkAssign",
         "type": "object"
       },
+      "NetworkDisassociate": {
+        "properties": {
+          "floating_ip": {
+            "title": "Floating Ip",
+            "type": "string"
+          }
+        },
+        "required": [
+          "floating_ip"
+        ],
+        "title": "NetworkDisassociate",
+        "type": "object"
+      },
       "UserCreate": {
         "properties": {
           "external_user_id": {
@@ -94,6 +107,17 @@
           "external_user_id": {
             "title": "External User Id",
             "type": "string"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
           },
           "os_password": {
             "anyOf": [
@@ -317,6 +341,45 @@
           }
         },
         "summary": "Assign Network",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
+    "/workspaces/network/disassociate": {
+      "delete": {
+        "operationId": "disassociate_network_workspaces_network_disassociate_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NetworkDisassociate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Disassociate Network",
         "tags": [
           "workspaces"
         ]
