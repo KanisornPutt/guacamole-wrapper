@@ -25,7 +25,12 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://guacadmin:password@db:5432/wrapper_db
+      DB_DIALECT: postgresql+asyncpg
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: wrapper_db
+      DB_USER: guacadmin
+      DB_PASSWORD: password
       SQLALCHEMY_ECHO: "false"
     ports:
       - "8000:8000"

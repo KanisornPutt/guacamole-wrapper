@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy import pool
 
-from app.database import Base
+from app.database import Base, get_database_url
 from app import models
 
 load_dotenv()
@@ -21,10 +21,7 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    url = os.getenv("DATABASE_URL", "")
-    if not url:
-        raise RuntimeError("DATABASE_URL is not set")
-    return url
+    return get_database_url()
 
 
 def run_migrations_offline() -> None:

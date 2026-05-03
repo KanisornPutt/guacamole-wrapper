@@ -27,7 +27,9 @@ The service also exposes the default FastAPI docs at `/docs` and `/openapi.json`
 
 Required environment variables:
 
-- `DATABASE_URL`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASSWORD`
 - `GUACAMOLE_BASE_URL`
 - `GUACAMOLE_DATA_SOURCE`
 - `GUACAMOLE_USERNAME`
@@ -37,11 +39,16 @@ Required environment variables:
 Common optional settings:
 
 - `APP_TITLE`
+- `DB_DIALECT`
+- `DB_HOST`
+- `DB_PORT`
 - `SQLALCHEMY_ECHO`
 - `GUACAMOLE_SSH_USERNAME`
 - `GUACAMOLE_SSH_PASSWORD`
 - `GUACAMOLE_SSH_PORT`
 - `GUACAMOLE_HTTP_TIMEOUT`
+
+You can alternatively provide `DATABASE_URL` instead of the `DB_*` variables.
 
 If you need a fresh migration after changing models, use:
 
