@@ -3,6 +3,7 @@ from typing import Dict
 import logging
 
 import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,6 +24,12 @@ if not BASE_URL or not DATA_SOURCE:
     raise RuntimeError("GUACAMOLE_BASE_URL and GUACAMOLE_DATA_SOURCE must be set")
 
 
+@retry(
+    retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException)),
+    wait=wait_exponential(multiplier=0.5, min=0.5, max=5),
+    stop=stop_after_attempt(4),
+    reraise=True,
+)
 async def _get_token() -> str:
     if not GUACAMOLE_USERNAME or not GUACAMOLE_PASSWORD:
         raise RuntimeError("Guacamole credentials are not set")
